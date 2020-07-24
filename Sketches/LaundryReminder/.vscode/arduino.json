@@ -1,8 +1,6 @@
 {
-    "port": "COM4",
     "board": "esp32:esp32:featheresp32",
     "configuration": "FlashFreq=80,UploadSpeed=921600,DebugLevel=none,PartitionScheme=default",
-    "programmer": "AVR ISP",
-    "sketch": "LaundryReminderButton\\LaundryReminderButton.ino",
-    "output": "../ArduinoOutput"
+    "sketch": "Sketches\\LaundryReminder\\LaundryReminderButton\\LaundryReminderButton.ino",
+    "port": "COM4"
 }
