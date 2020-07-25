@@ -44,14 +44,25 @@ struct Logger{
     delay(100);
   }
   private:void WriteInfoToScreen (char * msg, bool append){
+    Serial.println("Start screen msg ");
+    
+    delay(2000);
     if(!append){
+      Serial.println("NOT Appending, clearing, AND writing INFO ");
       display.clearDisplay();
-      display.display();
+      display.setCursor(0,0);
+      //display.display();
       display.write(INFO_TXT);
+      delay(2000);
     }
+
+    Serial.println("Writing actual info msg");
     display.write(msg);
+    delay(2000);
+
+    Serial.println("Calling Display func");
     display.display();
-    delay(100);
+    delay(2000);
   }
 
   public:void logError(char * errorMsg){ 
@@ -63,7 +74,7 @@ struct Logger{
     WriteErrorToScreen(errorMsg);
   }
   public:void logInfo(StringSumHelper infoMsg){
-      logger.logInfo( strdup( infoMsg.c_str()) );
+      logInfo( strdup( infoMsg.c_str()) );
   }
   public:void logInfo(char * infoMsg){ 
     // write into the serial port
@@ -103,8 +114,8 @@ void setup()
   };
   
   
-  // Connect to the WiFi network (see function below loop)
-  connectToWiFi(_networkName, _networkPswd);
+  // // Connect to the WiFi network (see function below loop)
+  // connectToWiFi(_networkName, _networkPswd);
 
   digitalWrite(LED_PIN, LOW); // LED off
 
@@ -145,6 +156,7 @@ bool InitButton(){
   Serial.println("Button acknowledged.");
   //Start with the LED off
   button.LEDoff();
+  button.clearEventBits();
   return true;
 }
 
@@ -154,18 +166,23 @@ bool InitButton(){
 
 void loop()
 { 
+
   if (button.isPressed() == true) {
+    Serial.println("inside button is pressed");
     button.LEDon(brightness);
     while(button.isPressed() == true)
       delay(10);  //wait for user to stop pressing
     button.LEDoff();
   }
   if(button.hasBeenClicked()){
+    Serial.println("inside has been clicked");
     button.clearEventBits();
     connectToWiFi(_networkName, _networkPswd);
   }
   
-  delay(20); //Don't hammer too hard on the I2C bus
+  delay(200); //Don't hammer too hard on the I2C bus
+
+  Serial.println("-");
 }
 
 

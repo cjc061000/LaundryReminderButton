@@ -1,6 +1,7 @@
 {
     "board": "esp32:esp32:featheresp32",
     "configuration": "FlashFreq=80,UploadSpeed=921600,DebugLevel=none,PartitionScheme=default",
-    "sketch": "Sketches\\LaundryReminder\\LaundryReminderButton\\LaundryReminderButton.ino",
-    "port": "COM4"
+    "sketch": "LaundryReminderButton.ino",
+    "port": "COM4",
+    "output": "../ArduinoOutput"
 }

@@ -30,3 +30,7 @@
 *.exe
 *.out
 *.app
+
+Sketches/LaundryReminder/ArduinoOutput
+Sketches/LaundryReminder/ArduinoOutput/*
+Sketches/LaundryReminder/ArduinoOutput/**
