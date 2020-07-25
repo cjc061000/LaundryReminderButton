@@ -22,11 +22,11 @@ uint8_t brightness = 100;   //The brightness to set the LED to when the button i
                             //Can be any value between 0 (off) and 255 (max)
 
 // WiFi network name and password:
-const char * networkName = "IntoTheSpiderWebs";
-const char * networkPswd = "4thDimension";
+const char * _networkName = "IntoTheSpiderWebs";
+const char * _networkPswd = "4thDimension";
 
 // Internet domain to request from:
-const char * hostDomain = "google.com";
+const char * _hostDomain = "google.com";
 const int hostPort = 80;
 
 const int BUTTON_PIN = 0;
@@ -43,10 +43,12 @@ struct Logger{
     display.display();
     delay(100);
   }
-  private:void WriteInfoToScreen (char * msg){
-    display.clearDisplay();
-    display.display();
-    display.write(INFO_TXT);
+  private:void WriteInfoToScreen (char * msg, bool append){
+    if(!append){
+      display.clearDisplay();
+      display.display();
+      display.write(INFO_TXT);
+    }
     display.write(msg);
     display.display();
     delay(100);
@@ -60,13 +62,24 @@ struct Logger{
     // write into the screen
     WriteErrorToScreen(errorMsg);
   }
+  public:void logInfo(StringSumHelper infoMsg){
+      logger.logInfo( strdup( infoMsg.c_str()) );
+  }
   public:void logInfo(char * infoMsg){ 
     // write into the serial port
     Serial.println(INFO_TXT);
     Serial.print(infoMsg);
 
     // write into the screen
-    WriteInfoToScreen(infoMsg);
+    WriteInfoToScreen(infoMsg, (bool)false);
+  }
+  public:void logInfoAppend(char * infoMsg){
+    // write into the serial port
+    Serial.println(INFO_TXT);
+    Serial.print(infoMsg);
+
+    // write into the screen
+    WriteInfoToScreen(infoMsg, (bool)true);
   }
 };
 Logger logger;
@@ -82,10 +95,8 @@ void setup()
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   pinMode(LED_PIN, OUTPUT);
 
-  if(!InitScreen()){
-    logger.logError("Unable to initialize screen ... Stopping...");
-    while(1);
-  }
+  InitScreen();
+
   if(!InitButton()){
     logger.logError("Unable to initialize Button ... Stopping...");
     while (1);
@@ -93,11 +104,9 @@ void setup()
   
   
   // Connect to the WiFi network (see function below loop)
-  connectToWiFi(networkName, networkPswd);
+  connectToWiFi(_networkName, _networkPswd);
 
   digitalWrite(LED_PIN, LOW); // LED off
-  Serial.print("Press button 0 to connect to ");
-  Serial.println(hostDomain);
 
   logger.logInfo("Init Success ... Waiting for input ...");
 }
@@ -139,34 +148,23 @@ bool InitButton(){
   return true;
 }
 
-
-
-
-
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////        MAIN LOOP Function    //////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void loop()
-{
-  if (digitalRead(BUTTON_PIN) == LOW)
-  { // Check if button has been pressed
-    while (digitalRead(BUTTON_PIN) == LOW)
-      ; // Wait for button to be released
-
-    digitalWrite(LED_PIN, HIGH); // Turn on LED
-    requestURL(hostDomain, hostPort); // Connect to server
-    digitalWrite(LED_PIN, LOW); // Turn off LED
-  }
-  //check if button is pressed, and tell us if it is!
+{ 
   if (button.isPressed() == true) {
-    Serial.println("The button is pressed!");
     button.LEDon(brightness);
     while(button.isPressed() == true)
       delay(10);  //wait for user to stop pressing
-    Serial.println("The button is not pressed.");
     button.LEDoff();
   }
+  if(button.hasBeenClicked()){
+    button.clearEventBits();
+    connectToWiFi(_networkName, _networkPswd);
+  }
+  
   delay(20); //Don't hammer too hard on the I2C bus
 }
 
@@ -177,9 +175,7 @@ void loop()
 void connectToWiFi(const char * ssid, const char * pwd)
 {
   int ledState = 0;
-
-  printLine();
-  Serial.println("Connecting to WiFi network: " + String(ssid));
+  logger.logInfo( "Connecting to WiFi network: " + String(ssid));
 
   WiFi.begin(ssid, pwd);
 
@@ -189,13 +185,13 @@ void connectToWiFi(const char * ssid, const char * pwd)
     digitalWrite(LED_PIN, ledState);
     ledState = (ledState + 1) % 2; // Flip ledState
     delay(500);
-    Serial.print(".");
+    logger.logInfoAppend(".");
   }
-
-  Serial.println();
-  Serial.println("WiFi connected!");
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
+  logger.logInfo("WiFi connected! IP: " + String(WiFi.localIP()));
+  // Serial.println();
+  // Serial.println("WiFi connected!");
+  // Serial.print("IP address: ");
+  // Serial.println(WiFi.localIP());
 }
 
 void requestURL(const char * host, uint8_t port)
