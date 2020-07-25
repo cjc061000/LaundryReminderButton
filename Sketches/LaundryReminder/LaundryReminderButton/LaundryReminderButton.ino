@@ -13,6 +13,10 @@ QwiicButton button;
 #define OLED_RESET     4 // Reset pin # (or -1 if sharing Arduino reset pin)
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
+const char * ERROR_TXT = "Error: " ;
+const char * INFO_TXT = "Info: " ;
+
+
 // Button declarations
 uint8_t brightness = 100;   //The brightness to set the LED to when the button is pushed
                             //Can be any value between 0 (off) and 255 (max)
@@ -29,6 +33,43 @@ const int BUTTON_PIN = 0;
 const int LED_PIN = 13;
 
 
+struct Logger{
+  Logger(){};
+  private:void WriteErrorToScreen (char * msg){
+    display.clearDisplay();
+    display.display();
+    display.write(ERROR_TXT);
+    display.write(msg);
+    display.display();
+    delay(100);
+  }
+  private:void WriteInfoToScreen (char * msg){
+    display.clearDisplay();
+    display.display();
+    display.write(INFO_TXT);
+    display.write(msg);
+    display.display();
+    delay(100);
+  }
+
+  public:void logError(char * errorMsg){ 
+    // write into the serial port
+    Serial.println(ERROR_TXT);
+    Serial.print(errorMsg);
+
+    // write into the screen
+    WriteErrorToScreen(errorMsg);
+  }
+  public:void logInfo(char * infoMsg){ 
+    // write into the serial port
+    Serial.println(INFO_TXT);
+    Serial.print(infoMsg);
+
+    // write into the screen
+    WriteErrorToScreen(infoMsg);
+  }
+};
+Logger logger;
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////        SETUP Functions     ////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -41,18 +82,15 @@ void setup()
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   pinMode(LED_PIN, OUTPUT);
 
-  InitScreen();
-
-  // configuring the button
-  Serial.println("Connecting Qwicc button");
-  Wire.begin(); //Join I2C 
-  if (button.begin() == false) {
-    Serial.println("Buton Device did not acknowledge! Freezing.");
-    while (1);
+  if(!InitScreen()){
+    logger.logError("Unable to initialize screen ... Stopping...");
+    while(1);
   }
-  Serial.println("Button acknowledged.");
-  //Start with the LED off
-  button.LEDoff();
+  if(!InitButton()){
+    logger.logError("Unable to initialize Button ... Stopping...");
+    while (1);
+  };
+  
   
   // Connect to the WiFi network (see function below loop)
   connectToWiFi(networkName, networkPswd);
@@ -60,8 +98,13 @@ void setup()
   digitalWrite(LED_PIN, LOW); // LED off
   Serial.print("Press button 0 to connect to ");
   Serial.println(hostDomain);
+
+  logger.logInfo("Init Success ... Waiting for input ...");
 }
 
+// ----------------------------------------------------
+// Startup Aux Functions
+// ----------------------------------------------------
 bool InitScreen(){
   // configure the screen
   Serial.println("Initializing Screen");
@@ -77,9 +120,22 @@ bool InitScreen(){
   display.setTextColor(SSD1306_WHITE); // Draw white text
   display.setCursor(0, 0);     // Start at top-left corner
   display.cp437(true);         // Use full 256 char 'Code Page 437' font
-  display.write("- Hello World -- Hello World -- Hello World -- Hello World -");
   display.display();
 
+  return true;
+}
+
+bool InitButton(){
+  // configuring the button
+  Serial.println("Connecting Qwicc button");
+  Wire.begin(); //Join I2C 
+  if (button.begin() == false) {
+    Serial.println("Buton Device did not acknowledge! Freezing.");
+    return false;
+  }
+  Serial.println("Button acknowledged.");
+  //Start with the LED off
+  button.LEDoff();
   return true;
 }
 
@@ -191,3 +247,47 @@ void printLine()
     Serial.print("-");
   Serial.println();
 }
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////        Error Functions    ////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// struct Logger{
+//   Logger(){};
+//   void logError(char * errorMsg){ 
+//     // write into the serial port
+//     Serial.println(ERROR_TXT);
+//     Serial.print(errorMsg);
+
+//     // write into the screen
+//     WriteErrorToScreen(errorMsg);
+//   }
+//   void logInfo(char * infoMsg){ 
+//     // write into the serial port
+//     Serial.println(INFO_TXT);
+//     Serial.print(infoMsg);
+
+//     // write into the screen
+//     WriteErrorToScreen(infoMsg);
+//   }
+// };
+
+
+
+void WriteErrorToScreen (char * msg){
+  display.clearDisplay();
+  display.display();
+  display.write(ERROR_TXT);
+  display.write(msg);
+  display.display();
+  delay(100);
+}
+void WriteInfoToScreen (char * msg){
+  display.clearDisplay();
+  display.display();
+  display.write(INFO_TXT);
+  display.write(msg);
+  display.display();
+  delay(100);
+}
+
+
