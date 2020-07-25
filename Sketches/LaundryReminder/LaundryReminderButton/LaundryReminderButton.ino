@@ -37,32 +37,21 @@ struct Logger{
   Logger(){};
   private:void WriteErrorToScreen (char * msg){
     display.clearDisplay();
-    display.display();
+    display.setCursor(0,0);
     display.write(ERROR_TXT);
     display.write(msg);
     display.display();
     delay(100);
   }
   private:void WriteInfoToScreen (char * msg, bool append){
-    Serial.println("Start screen msg ");
-    
-    delay(2000);
     if(!append){
-      Serial.println("NOT Appending, clearing, AND writing INFO ");
       display.clearDisplay();
       display.setCursor(0,0);
-      //display.display();
       display.write(INFO_TXT);
-      delay(2000);
     }
-
-    Serial.println("Writing actual info msg");
     display.write(msg);
-    delay(2000);
-
-    Serial.println("Calling Display func");
     display.display();
-    delay(2000);
+    delay(100);
   }
 
   public:void logError(char * errorMsg){ 
@@ -83,6 +72,9 @@ struct Logger{
 
     // write into the screen
     WriteInfoToScreen(infoMsg, (bool)false);
+  }
+  public:void logInfoAppend(StringSumHelper infoMsg){
+      logInfoAppend( strdup( infoMsg.c_str()) );
   }
   public:void logInfoAppend(char * infoMsg){
     // write into the serial port
@@ -180,9 +172,7 @@ void loop()
     connectToWiFi(_networkName, _networkPswd);
   }
   
-  delay(200); //Don't hammer too hard on the I2C bus
-
-  Serial.println("-");
+  delay(500); //Don't hammer too hard on the I2C bus
 }
 
 
@@ -193,8 +183,11 @@ void connectToWiFi(const char * ssid, const char * pwd)
 {
   int ledState = 0;
   logger.logInfo( "Connecting to WiFi network: " + String(ssid));
-
-  WiFi.begin(ssid, pwd);
+  if (WiFi.status() != WL_CONNECTED)
+  {
+    WiFi.begin(ssid, pwd);
+  }
+  else{logger.logInfo("Wifi already connected. ");}
 
   while (WiFi.status() != WL_CONNECTED) 
   {
@@ -204,11 +197,7 @@ void connectToWiFi(const char * ssid, const char * pwd)
     delay(500);
     logger.logInfoAppend(".");
   }
-  logger.logInfo("WiFi connected! IP: " + String(WiFi.localIP()));
-  // Serial.println();
-  // Serial.println("WiFi connected!");
-  // Serial.print("IP address: ");
-  // Serial.println(WiFi.localIP());
+  logger.logInfoAppend("IP: " + String(WiFi.localIP()));
 }
 
 void requestURL(const char * host, uint8_t port)
