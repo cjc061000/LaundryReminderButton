@@ -66,7 +66,7 @@ struct Logger{
     Serial.print(infoMsg);
 
     // write into the screen
-    WriteErrorToScreen(infoMsg);
+    WriteInfoToScreen(infoMsg);
   }
 };
 Logger logger;
