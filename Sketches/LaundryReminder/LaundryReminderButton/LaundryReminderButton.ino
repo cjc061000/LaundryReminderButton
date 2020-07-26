@@ -158,16 +158,13 @@ bool InitButton(){
 
 void loop()
 { 
-
   if (button.isPressed() == true) {
-    Serial.println("inside button is pressed");
     button.LEDon(brightness);
     while(button.isPressed() == true)
       delay(10);  //wait for user to stop pressing
     button.LEDoff();
   }
   if(button.hasBeenClicked()){
-    Serial.println("inside has been clicked");
     button.clearEventBits();
     connectToWiFi(_networkName, _networkPswd);
   }
