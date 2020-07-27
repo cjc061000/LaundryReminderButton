@@ -4,6 +4,7 @@
 #include <Adafruit_SSD1306.h>
 
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
 #include <SparkFun_Qwiic_Button.h>
 QwiicButton button;
 
@@ -26,13 +27,38 @@ const char * _networkName = "IntoTheSpiderWebs";
 const char * _networkPswd = "4thDimension";
 
 // Internet domain to request from:
-const char * _hostDomain = "google.com";
-const int hostPort = 80;
+const char * _hostDomain = "khappservice.azurewebsites.net";
+const char * _resource = "/api/KS-SendEmail?code=1mPYgJrkZSrB8ZHiN06tPSx52Tzst9IE7mBlScxRzmTuVVFTdfubIw==";
+const int _hostPort = 80;
 
 const int BUTTON_PIN = 0;
 const int LED_PIN = 13;
 
-
+/* use 
+openssl s_client -showcerts -connect www.howsmyssl.com:443 </dev/null 
+to get this certificate */
+const char* ca_cert = \
+  "-----BEGIN CERTIFICATE-----\n" \
+"MIIDdzCCAl+gAwIBAgIEAgAAuTANBgkqhkiG9w0BAQUFADBaMQswCQYDVQQGEwJJ\n" \
+"RTESMBAGA1UEChMJQmFsdGltb3JlMRMwEQYDVQQLEwpDeWJlclRydXN0MSIwIAYD\n" \
+"VQQDExlCYWx0aW1vcmUgQ3liZXJUcnVzdCBSb290MB4XDTAwMDUxMjE4NDYwMFoX\n" \
+"DTI1MDUxMjIzNTkwMFowWjELMAkGA1UEBhMCSUUxEjAQBgNVBAoTCUJhbHRpbW9y\n" \
+"ZTETMBEGA1UECxMKQ3liZXJUcnVzdDEiMCAGA1UEAxMZQmFsdGltb3JlIEN5YmVy\n" \
+"VHJ1c3QgUm9vdDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAKMEuyKr\n" \
+"mD1X6CZymrV51Cni4eiVgLGw41uOKymaZN+hXe2wCQVt2yguzmKiYv60iNoS6zjr\n" \
+"IZ3AQSsBUnuId9Mcj8e6uYi1agnnc+gRQKfRzMpijS3ljwumUNKoUMMo6vWrJYeK\n" \
+"mpYcqWe4PwzV9/lSEy/CG9VwcPCPwBLKBsua4dnKM3p31vjsufFoREJIE9LAwqSu\n" \
+"XmD+tqYF/LTdB1kC1FkYmGP1pWPgkAx9XbIGevOF6uvUA65ehD5f/xXtabz5OTZy\n" \
+"dc93Uk3zyZAsuT3lySNTPx8kmCFcB5kpvcY67Oduhjprl3RjM71oGDHweI12v/ye\n" \
+"jl0qhqdNkNwnGjkCAwEAAaNFMEMwHQYDVR0OBBYEFOWdWTCCR1jMrPoIVDaGezq1\n" \
+"BE3wMBIGA1UdEwEB/wQIMAYBAf8CAQMwDgYDVR0PAQH/BAQDAgEGMA0GCSqGSIb3\n" \
+"DQEBBQUAA4IBAQCFDF2O5G9RaEIFoN27TyclhAO992T9Ldcw46QQF+vaKSm2eT92\n" \
+"9hkTI7gQCvlYpNRhcL0EYWoSihfVCr3FvDB81ukMJY2GQE/szKN+OMY3EU/t3Wgx\n" \
+"jkzSswF07r51XgdIGn9w/xZchMB5hbgF/X++ZRGjD8ACtPhSNzkE1akxehi/oCr0\n" \
+"Epn3o0WC4zxe9Z2etciefC7IpJ5OCBRLbf1wbWsaY71k5h+3zvDyny67G7fyUIhz\n" \
+"ksLi4xaNmjICq44Y3ekQEe5+NauQrz4wlHrQMz2nZQ/1/I6eYs9HRCwBXbsdtTLS\n" \
+"R9I4LtD+gdwyah617jzV/OeBHRnDJELqYzmp\n" \
+"-----END CERTIFICATE-----\n";
 struct Logger{
   Logger(){};
   private:void WriteErrorToScreen (char * msg){
@@ -167,6 +193,8 @@ void loop()
   if(button.hasBeenClicked()){
     button.clearEventBits();
     connectToWiFi(_networkName, _networkPswd);
+    delay(2000);
+    requestURL(_hostDomain,_hostPort);
   }
   
   delay(500); //Don't hammer too hard on the I2C bus
@@ -203,23 +231,30 @@ void requestURL(const char * host, uint8_t port)
   Serial.println("Connecting to domain: " + String(host));
 
   // Use WiFiClient class to create TCP connections
-  WiFiClient client;
+  WiFiClient client;    //Declare object of class HTTPClient
+  
+  /* set SSL/TLS certificate */
+  //client.setCACert(ca_cert);
   if (!client.connect(host, port))
   {
-    Serial.println("connection failed");
+    Serial.println("Connection error");
     return;
   }
-  Serial.println("Connected!");
+  
   printLine();
 
+  String body = "{\"dummy\":\"data\"}";
   // This will send the request to the server
-  client.print((String)"GET / HTTP/1.1\r\n" +
+  client.print("POST " + String(_resource)+ " HTTP/1.1\r\n" +
                "Host: " + String(host) + "\r\n" +
-               "Connection: close\r\n\r\n");
+               "Content-Length: " + body.length() + "\r\n" +
+               "Content-Type: application/json\r\n" +
+               "Connection: close\r\n\r\n"+
+               "\r\n" + body);
   unsigned long timeout = millis();
   while (client.available() == 0) 
   {
-    if (millis() - timeout > 5000) 
+    if (millis() - timeout > 30000) 
     {
       Serial.println(">>> Client Timeout !");
       client.stop();
@@ -228,12 +263,14 @@ void requestURL(const char * host, uint8_t port)
   }
 
   // Read all the lines of the reply from server and print them to Serial
+  String responseLines = "";
   while (client.available()) 
   {
     String line = client.readStringUntil('\r');
+    responseLines = responseLines + " " + line;
     Serial.print(line);
   }
-
+  logger.logInfo(responseLines);
   Serial.println();
   Serial.println("closing connection");
   client.stop();
