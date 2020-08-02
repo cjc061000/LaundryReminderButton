@@ -9,6 +9,7 @@
                 "C:\\Users\\cc\\AppData\\Local\\Arduino15\\packages\\esp32\\hardware\\esp32\\1.0.4\\**",
                 "C:\\Users\\cc\\Documents\\Arduino\\libraries\\**",
                 "C:/Users/cc/AppData/Local/Arduino15/packages/esp32/hardware/esp32/1.0.4/cores/esp32",
+                "${workspaceFolder}/libs/**",
                 "${workspaceFolder}/libs"
             ],
             "defines": [
