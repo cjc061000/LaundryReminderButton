@@ -18,32 +18,19 @@ void ServerHelper::handleNewClient(WiFiClient client, String header)
         // if the current line is blank, you got two newline characters in a row.
         // that's the end of the client HTTP request, so send a response:
         if (currentLine.length() == 0) {
+          Serial.println("Thea request header is:");
+          Serial.println(header);
+          String paramStr = "";
+          String requestUrl = getRequestUrl(header, paramStr);
+          Serial.println("Request url is: " + requestUrl);
+          Serial.println("detected params: "+ paramStr);
           // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
           // and a content-type so the client knows what's coming, then a blank line:
           client.println("HTTP/1.1 200 OK");
           client.println("Content-type:text/html");
           client.println("Connection: close");
           client.println();
-          
-          // // turns the GPIOs on and off
-          // if (header.indexOf("GET /26/on") >= 0) {
-          //   Serial.println("GPIO 26 on");
-          //   output26State = "on";
-          //   digitalWrite(output26, HIGH);
-          // } else if (header.indexOf("GET /26/off") >= 0) {
-          //   Serial.println("GPIO 26 off");
-          //   output26State = "off";
-          //   digitalWrite(output26, LOW);
-          // } else if (header.indexOf("GET /27/on") >= 0) {
-          //   Serial.println("GPIO 27 on");
-          //   output27State = "on";
-          //   digitalWrite(output27, HIGH);
-          // } else if (header.indexOf("GET /27/off") >= 0) {
-          //   Serial.println("GPIO 27 off");
-          //   output27State = "off";
-          //   digitalWrite(output27, LOW);
-          // }
-          
+
           // Display the HTML web page
           client.println("<!DOCTYPE html><html>");
           client.println("<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
@@ -58,6 +45,17 @@ void ServerHelper::handleNewClient(WiFiClient client, String header)
           // Web Page Heading
           client.println("<body><h1>ESP32 Web Server</h1>");
           
+          client.println("<br><br>");
+
+          client.println("");
+          client.println("<form action='/submit' method='get'>");
+          client.println("  <label for='ssid'>SSID:</label>");
+          client.println("  <input type='text' id='ssid' name='ssid'><br><br>");
+          client.println("  <label for='pw'>PW:</label>");
+          client.println("  <input type='text' id='pw' name='pw'><br><br>");
+          client.println("  <input type='submit' value='Submit'>");
+          client.println("</form>");
+
           // Display current state, and ON/OFF buttons for GPIO 26  
           //client.println("<p>GPIO 26 - State " + output26State + "</p>");
           // If the output26State is off, it displays the ON button       
@@ -81,7 +79,8 @@ void ServerHelper::handleNewClient(WiFiClient client, String header)
           client.println();
           // Break out of the while loop
           break;
-        } else { // if you got a newline, then clear currentLine
+        } 
+        else { // if you got a newline, then clear currentLine
           currentLine = "";
         }
       } else if (c != '\r') {  // if you got anything else but a carriage return character,
@@ -93,6 +92,56 @@ void ServerHelper::handleNewClient(WiFiClient client, String header)
   header = "";
   // Close the connection
   client.stop();
+}
+
+String ServerHelper::getRequestUrl(String header, String &detectedParams){
+  String detectedUrl = "";
+  bool startDetect = false;
+  bool detectParams = false;
+  int spaceCount = 0;
+
+  for(int i = 0 ; i < header.length() ; i++){
+    char currChar = header[i];
+    Serial.print("Working with Char: ");
+    Serial.println((String)currChar);
+    // start detect
+    if(currChar == '/'){
+      Serial.println("First Slash Detected");
+      startDetect = true;
+    }
+    // if space, break
+    else if(currChar == ' '){Serial.println("Space Detected");spaceCount++;}
+    if (spaceCount > 1)
+    {
+      break;
+    }
+    
+
+    // if start detected, save characters
+    if (startDetect && currChar!= '?')
+    {
+      Serial.println("Adding to url var");
+      detectedUrl+=currChar;
+    }
+    else if(detectParams){
+      Serial.println("Adding to params var");
+      String cc = String(currChar);
+      detectedParams += cc;
+    }
+    
+    // if ? then detect params
+    if (currChar == '?')
+    {
+      Serial.println("? Detected");
+      startDetect = false;
+      detectParams = true;
+    }
+  }
+  Serial.println("params before return: " + detectedParams);
+  return detectedUrl;
+}
+void ServerHelper::getRequestParameters(String header,String ssid, String pw){
+  
 }
 
 // void Morse::dash()

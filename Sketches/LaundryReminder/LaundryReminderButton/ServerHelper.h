@@ -10,6 +10,8 @@ class ServerHelper
     ServerHelper();
     void handleNewClient(WiFiClient client, String Header);
   private:
+    String getRequestUrl(String header, String &detectedParams);
+    void getRequestParameters(String header, String ssid, String pw);
     int _pin;
 };
 
