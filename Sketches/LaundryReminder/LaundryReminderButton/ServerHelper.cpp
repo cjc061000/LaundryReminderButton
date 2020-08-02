@@ -1,13 +1,13 @@
 #include <Arduino.h>
-#include "Morse.h"
+#include "ServerHelper.h"
 
-Morse::Morse(int pin)
+ServerHelper::ServerHelper(int pin)
 {
   pinMode(pin, OUTPUT);
   _pin = pin;
 }
 
-void Morse::test()
+void ServerHelper::test()
 {
   digitalWrite(_pin, HIGH);
   delay(250);

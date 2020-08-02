@@ -30,7 +30,7 @@
 
 // Load Wi-Fi library
 #include <WiFi.h>
-#include "Morse.h"
+#include "ServerHelper.h"
 
 // Replace with your network credentials
 const char* ssid     = "ESP32-Access-Point";
@@ -38,7 +38,7 @@ const char* password = "123456789";
 
 // Set web server port number to 80
 WiFiServer server(80);
-Morse morse(13);
+ServerHelper serverHelper(13);
 
 // Variable to store the HTTP request
 String header;
@@ -55,7 +55,7 @@ void setup() {
   Serial.begin(115200);
 
   // Connect to Wi-Fi network with SSID and password
-  morse.test();
+  serverHelper.test();
   // Remove the password parameter, if you want the AP (Access Point) to be open
   WiFi.softAP(ssid, password);
 
