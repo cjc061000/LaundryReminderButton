@@ -8,7 +8,7 @@ class ServerHelper
 {
   public:
     ServerHelper();
-    void handleNewClient(WiFiClient client, String Header);
+    void handleNewClient(WiFiClient client, String Header, String &requestUrl);
   private:
     String getRequestUrl(String header, String &detectedParams);
     void getRequestParameters(String queryParamStr, String &ssid, String &pw);
