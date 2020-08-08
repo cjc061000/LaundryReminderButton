@@ -182,9 +182,13 @@ void ServerHelper::getRequestParameters(String queryParamStr,String &ssid, Strin
 void ServerHelper::Urldecode2(String &dst, String src)
 {
   char a, b;
-  while (*src) {
-    if ((*src == '%') &&
-      ((a = src[1]) && (b = src[2])) &&
+  int i = 0;
+  while (i < src.length())
+  {
+    char currChar = src[i];
+    /* code */
+    if ((currChar == '%') &&
+      ((a = src[i+1]) && (b = src[i+2])) &&
       (isxdigit(a) && isxdigit(b))) {
         if (a >= 'a')
                 a -= 'a'-'A';
@@ -198,14 +202,15 @@ void ServerHelper::Urldecode2(String &dst, String src)
                 b -= ('A' - 10);
         else
                 b -= '0';
-        dst += 16*a+b;
-        src+=3;
-    } else if (*src == '+') {
+        dst += (char)(16*a+b);
+        i+=3;
+    } else if (currChar == '+') {
       dst += ' ';
-      src++;
+      i++;
     } else {
-      dst += *src++;
+      dst += currChar;
+      i++;
     }
   }
-  dst += '\0';
+  // dst += '\0';
 }
