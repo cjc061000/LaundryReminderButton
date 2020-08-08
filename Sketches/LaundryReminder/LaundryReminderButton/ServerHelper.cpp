@@ -24,6 +24,19 @@ void ServerHelper::handleNewClient(WiFiClient client, String header)
           String requestUrl = getRequestUrl(header, paramStr);
           Serial.println("Request url is: " + requestUrl);
           Serial.println("detected params: "+ paramStr);
+
+          if(requestUrl=="/"){
+            Serial.println("Home page detected");
+          }
+          if(requestUrl=="/submit"){
+            Serial.println("Submit page detected");
+            String ssid="";
+            String pw="";
+            getRequestParameters(paramStr,ssid,pw);
+            Serial.println("ssid: "+ssid);
+            Serial.println("pw: "+ pw);
+          }
+          
           // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
           // and a content-type so the client knows what's coming, then a blank line:
           client.println("HTTP/1.1 200 OK");
@@ -140,14 +153,59 @@ String ServerHelper::getRequestUrl(String header, String &detectedParams){
   Serial.println("params before return: " + detectedParams);
   return detectedUrl;
 }
-void ServerHelper::getRequestParameters(String header,String ssid, String pw){
-  
+
+void ServerHelper::getRequestParameters(String queryParamStr,String &ssid, String &pw){
+  bool ssidKeyDetected = false;
+  bool pwKeyDetected = false;
+  int ampIndedx = 0;
+  String ssidDst = "";
+  String pwDst = "";
+  if(queryParamStr.length() > 0){
+    // localte the ampersand
+    for(int i = 0 ; i < queryParamStr.length() ; i++){
+      char currChar = queryParamStr[i];
+      if(currChar == '&'){ampIndedx = i;}
+    }
+
+    // extract the ssid
+    ssid = queryParamStr.substring(5,ampIndedx);
+    pw = queryParamStr.substring(ampIndedx+4,queryParamStr.length());
+
+    Urldecode2(ssidDst, ssid);
+    Urldecode2(pwDst, pw);
+
+    ssid = ssidDst;
+    pw = pwDst;
+  }
 }
 
-// void Morse::dash()
-// {
-//   digitalWrite(_pin, HIGH);
-//   delay(1000);
-//   digitalWrite(_pin, LOW);
-//   delay(250);
-// }
+void ServerHelper::Urldecode2(String &dst, String src)
+{
+  char a, b;
+  while (*src) {
+    if ((*src == '%') &&
+      ((a = src[1]) && (b = src[2])) &&
+      (isxdigit(a) && isxdigit(b))) {
+        if (a >= 'a')
+                a -= 'a'-'A';
+        if (a >= 'A')
+                a -= ('A' - 10);
+        else
+                a -= '0';
+        if (b >= 'a')
+                b -= 'a'-'A';
+        if (b >= 'A')
+                b -= ('A' - 10);
+        else
+                b -= '0';
+        dst += 16*a+b;
+        src+=3;
+    } else if (*src == '+') {
+      dst += ' ';
+      src++;
+    } else {
+      dst += *src++;
+    }
+  }
+  dst += '\0';
+}
