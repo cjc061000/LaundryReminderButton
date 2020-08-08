@@ -30,7 +30,9 @@
 
 // Load Wi-Fi library
 #include <WiFi.h>
+#include <EEPROM.h>
 #include "ServerHelper.h"
+
 
 // Replace with your network credentials
 const char* ssid     = "ESP32-Access-Point";
@@ -66,9 +68,30 @@ void setup() {
 
 void loop(){
   WiFiClient client = server.available();   // Listen for incoming clients
+  // If a new client connects,
+  if (client) {     
+    String requestUrl="";
+    String queryParamsStr="";
+    serverHelper.handleNewClient(client, header, requestUrl, queryParamsStr);
 
-  if (client) {                             // If a new client connects,
-    serverHelper.handleNewClient(client, header);
+    if(requestUrl == "/"){
+      serverHelper.PrintHomePage(client);
+    }
+    if(requestUrl == "/submit"){
+      // get params
+      String ssid = "";
+      String pw = "";
+      serverHelper.GetRequestParameters(queryParamsStr, ssid, pw);
+      // write them into eeprom
+      EEPROM.write()
+      // print response page
+      serverHelper.PrintSubmitPage(client, ssid,pw);
+    }
+
+    // Clear the header variable
+    header = "";
+    // Close the connection
+    client.stop();
     Serial.println("Client disconnected.");
     Serial.println("");
   }
