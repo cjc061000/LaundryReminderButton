@@ -10,7 +10,7 @@ class ServerHelper
     ServerHelper();
     void handleNewClient(WiFiClient client, String Header, String &requestUrl, String &queryParamsStr);
     void GetRequestParameters(String queryParamStr, String &ssid, String &pw);
-    void PrintHomePage(WiFiClient client);
+    void PrintHomePage(WiFiClient client, String ssid, String pw);
     void PrintSubmitPage(WiFiClient client, String ssid, String pw);
   private:
     String getRequestUrl(String header, String &detectedParams);

@@ -57,25 +57,21 @@ String ServerHelper::getRequestUrl(String header, String &detectedParams){
     Serial.println((String)currChar);
     // start detect
     if(currChar == '/'){
-      Serial.println("First Slash Detected");
       startDetect = true;
     }
     // if space, break
-    else if(currChar == ' '){Serial.println("Space Detected");spaceCount++;}
+    else if(currChar == ' '){spaceCount++;}
     if (spaceCount > 1)
     {
       break;
     }
     
-
     // if start detected, save characters
     if (startDetect && currChar!= '?')
     {
-      Serial.println("Adding to url var");
       detectedUrl+=currChar;
     }
     else if(detectParams){
-      Serial.println("Adding to params var");
       String cc = String(currChar);
       detectedParams += cc;
     }
@@ -88,7 +84,6 @@ String ServerHelper::getRequestUrl(String header, String &detectedParams){
       detectParams = true;
     }
   }
-  Serial.println("params before return: " + detectedParams);
   return detectedUrl;
 }
 
@@ -155,7 +150,7 @@ void ServerHelper::Urldecode2(String &dst, String src)
   // dst += '\0';
 }
 
-void ServerHelper::PrintHomePage(WiFiClient client){
+void ServerHelper::PrintHomePage(WiFiClient client, String ssid, String pw){
   Serial.println("Home page detected");
   // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
   // and a content-type so the client knows what's coming, then a blank line:
@@ -189,6 +184,14 @@ void ServerHelper::PrintHomePage(WiFiClient client){
   client.println("  <input type='submit' value='Submit'>");
   client.println("</form>");
 
+  if(pw.length() > 0 || ssid.length() > 0){
+    client.println("<br><br>");
+    client.println("<label>Current SSID in memory:</label>");
+    client.println("<label>"+ssid+"</label>");
+    client.println("<br><br>");
+    client.println("<label>Current PW in memory:</label>");
+    client.println("<label>"+pw+"</label>");
+  }
 
   client.println("</body></html>");
 

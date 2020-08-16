@@ -32,15 +32,20 @@
 #include <WiFi.h>
 #include <EEPROM.h>
 #include "ServerHelper.h"
+#include "EEPROMHelper.h"
 
 
 // Replace with your network credentials
 const char* ssid     = "ESP32-Access-Point";
 const char* password = "123456789";
+const char* EEPROM_SSID_LOCATION = "ssid_addr";
+const char* EEPROM_PW_LOCATION = "pw_addr";
+
 
 // Set web server port number to 80
 WiFiServer server(80);
 ServerHelper serverHelper;
+EEPROMHelper eepromHelper(EEPROM_SSID_LOCATION, EEPROM_PW_LOCATION);
 
 // Variable to store the HTTP request
 String header;
@@ -75,7 +80,10 @@ void loop(){
     serverHelper.handleNewClient(client, header, requestUrl, queryParamsStr);
 
     if(requestUrl == "/"){
-      serverHelper.PrintHomePage(client);
+      String pw = eepromHelper.GetPW();
+      String ssid = eepromHelper.GetSSID();
+
+      serverHelper.PrintHomePage(client, ssid, pw);
     }
     if(requestUrl == "/submit"){
       // get params
@@ -83,9 +91,12 @@ void loop(){
       String pw = "";
       serverHelper.GetRequestParameters(queryParamsStr, ssid, pw);
       // write them into eeprom
-      EEPROM.write()
+      eepromHelper.StorePW(pw);
+      eepromHelper.StoreSSID(ssid);
+
       // print response page
-      serverHelper.PrintSubmitPage(client, ssid,pw);
+      //serverHelper.PrintSubmitPage(client, ssid,pw);
+      serverHelper.PrintSubmitPage(client, eepromHelper.GetSSID(), eepromHelper.GetPW());
     }
 
     // Clear the header variable
