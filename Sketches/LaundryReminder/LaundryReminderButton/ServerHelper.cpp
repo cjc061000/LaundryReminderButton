@@ -53,8 +53,6 @@ String ServerHelper::getRequestUrl(String header, String &detectedParams){
 
   for(int i = 0 ; i < header.length() ; i++){
     char currChar = header[i];
-    Serial.print("Working with Char: ");
-    Serial.println((String)currChar);
     // start detect
     if(currChar == '/'){
       startDetect = true;
