@@ -22,6 +22,8 @@ const char* EEPROM_PW_LOCATION = "pw_addr";
 // // Button declarations
 uint8_t brightness = 100;   //The brightness to set the LED to when the button is pushed
                             //Can be any value between 0 (off) and 255 (max)
+int BTN_INTERRUPT_PIN = 33; //pin that will change states when interrupt is triggered
+bool interruptEntered = false;
 
 
 // Set web server port number to 80
@@ -52,7 +54,7 @@ const int _hostPort = 80;
 // WiFi Settings
 const char * _networkName = "IntoTheSpiderWebs";
 const char * _networkPswd = "4thDimension";
-const bool useEEPROMCreds = false;
+const bool useEEPROMCreds = true;
 
 // // OLED declarations
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
@@ -62,6 +64,7 @@ const bool useEEPROMCreds = false;
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 Logger logger;
+
 
 void setup() {
   //display.() .display(); // (SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
@@ -83,6 +86,12 @@ void setup() {
     logger.logError("Unable to initialize Button ... Stopping...");
     while (1);
   };
+
+  // pinMode(BTN_INTERRUPT_PIN, INPUT);
+  // esp_sleep_enable_ext0_wakeup(GPIO_NUM_33,0); //1 = High, 0 = Low
+  // Serial.println("Going to sleep now ...");
+  // delay(1000);
+  // esp_deep_sleep_start();
 
   logger.logInfo("Init Success ... Waiting for input ...");
 }
@@ -120,6 +129,9 @@ bool InitButton(){
   Serial.println("Button acknowledged.");
   //Start with the LED off
   button.LEDoff();
+
+  button.enablePressedInterrupt();  //configure the interrupt pin to go low when we press the button.
+  //button.enableClickedInterrupt();  //configure the interrupt pin to go low when we click the button.
   button.clearEventBits();
   return true;
 }
@@ -168,26 +180,27 @@ void loop(){
     button.LEDoff();
   }
   if(button.hasBeenClicked()){
+    bool wifiConnected = false;
     button.clearEventBits();
     String ssid = eepromHelper.GetSSID();
     String pw = eepromHelper.GetPW();
     if(useEEPROMCreds){
-      connectToWiFi(ssid, pw);
+      wifiConnected = connectToWiFi(ssid, pw);
     }else{
-      connectToWiFi(_networkName, _networkPswd);
+      wifiConnected = connectToWiFi(_networkName, _networkPswd);
     }
-    
-    delay(2000);
-    requestURL(_hostDomain,_hostPort);
+    if(wifiConnected){
+      delay(2000);
+      requestURL(_hostDomain,_hostPort);
+    }
   }
-  
   delay(500); //Don't hammer too hard on the I2C bus
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////        AUX Functions    ///////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void connectToWiFi(String ssid, String pwd)
+bool connectToWiFi(String ssid, String pwd)
 {
   int ledState = 0;
   logger.logInfo( "Connecting to WiFi network: " + String(ssid));
@@ -197,15 +210,24 @@ void connectToWiFi(String ssid, String pwd)
   }
   else{logger.logInfo("Wifi already connected. ");}
 
-  while (WiFi.status() != WL_CONNECTED) 
+  int timeoutCounter = 0;
+  while (WiFi.status() != WL_CONNECTED && timeoutCounter < 40) 
   {
     // Blink LED while we're connecting:
     digitalWrite(LED_PIN, ledState);
     ledState = (ledState + 1) % 2; // Flip ledState
     delay(500);
     logger.logInfoAppend(".");
+    timeoutCounter++;
+    Serial.print("Counter is: ");Serial.println(timeoutCounter);
   }
+  if(timeoutCounter > 39){
+    logger.logError("Could not connect to wifi.");
+    return false;
+  }
+
   logger.logInfoAppend("IP: " + String(WiFi.localIP()));
+  return true;
 }
 
 void requestURL(const char * host, uint8_t port)
